@@ -3,6 +3,53 @@
 
 using namespace cv;
 
+enum gColor {BLUE, GREEN, RED};/*Blue = 0, GREEN = 1, RED = 2*/
+
+Mat get_negative(Mat image)
+{
+    Vec3b color;
+    for(int i = 0; i < image.rows; i++)
+    {
+        for(int j = 0; j < image.cols; j++)
+        {
+            color = image.at<Vec3b>(i,j);
+
+            color[0] = 255 - color[0];
+            color[1] = 255 - color[1];
+            color[2] = 255 - color[2];
+
+            image.at<Vec3b>(i,j) = color;
+        }
+    }
+
+    return image;
+}
+
+Mat get_single_channel(Mat image, gColor color_id)
+{
+    Vec3b color;
+
+    const int n_channels = 2;
+    for(int i = 0; i < image.rows; i++)
+    {
+        for(int j = 0; j < image.cols; j++)
+        {
+            color = image.at<Vec3b>(i,j);
+
+            for(int k = 0; k <= n_channels; k++)
+            {
+                if(k != color_id)
+                    color[k] = 0;
+            }
+
+            image.at<Vec3b>(i,j) = color;
+        }
+    }
+
+    return image;
+}
+
+
 int main(int argc, char ** argv)
 {
 
@@ -20,19 +67,9 @@ int main(int argc, char ** argv)
         return -1;
     }
 
-    for(int i = 0; i < image.rows; i++)
-    {
-        for(int j = 0; j < image.cols; j++)
-        {
-            Vec3b cor = image.at<Vec3b>(i, j);
+    image = get_single_channel(image, BLUE);
 
-            cor[0] = 255 - cor[0];
-            cor[1] = 255 - cor[1];
-            cor[2] = 255 - cor[2];
 
-            image.at<Vec3b>(i, j) = cor;
-        }
-    }
 
     namedWindow("Display Image", WINDOW_AUTOSIZE);
     imshow("Display Image", image);
