@@ -1,0 +1,3 @@
+/home/lucas/Documents/Projects/ComputerVision/basic-image-filters/CMakeFiles/rebuild_cache.dir
+/home/lucas/Documents/Projects/ComputerVision/basic-image-filters/CMakeFiles/edit_cache.dir
+/home/lucas/Documents/Projects/ComputerVision/basic-image-filters/CMakeFiles/BasicFilters.dir
