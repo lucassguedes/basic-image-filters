@@ -8,7 +8,7 @@ enum gColor {BLUE, GREEN, RED};/*Blue = 0, GREEN = 1, RED = 2*/
 
 enum YIQScale {Q, I, Y}; /*Y = 0, I = 1, Q = 2*/
 
-Mat get_negative(Mat image)
+Mat3f get_negative(Mat3f image)
 {
     Vec3f color;
     for(int i = 0; i < image.rows; i++)
@@ -17,11 +17,31 @@ Mat get_negative(Mat image)
         {
             color = image.at<Vec3f>(i,j);
 
-            color[0] = 255 - color[0];
-            color[1] = 255 - color[1];
-            color[2] = 255 - color[2];
+            color[RED] = 1.0f - color[RED];
+            color[GREEN] = 1.0f - color[GREEN];
+            color[BLUE] = 1.0f - color[BLUE];
 
             image.at<Vec3f>(i,j) = color;
+        }
+    }
+
+    return image;
+}
+
+Mat get_negative(Mat image)
+{
+    Vec3b color;
+    for(int i = 0; i < image.rows; i++)
+    {
+        for(int j = 0; j < image.cols; j++)
+        {
+            color = image.at<Vec3b>(i,j);
+
+            color[RED] = 255 - color[RED];
+            color[GREEN] = 255 - color[GREEN];
+            color[BLUE] = 255 - color[BLUE];
+
+            image.at<Vec3b>(i,j) = color;
         }
     }
 
@@ -152,40 +172,19 @@ int main(int argc, char ** argv)
         return -1;
     }
 
-    // Vec3f colorA;
-
-    // colorA[RED] = 0;
-    // colorA[GREEN] = 100;
-    // colorA[BLUE] = 0;
-
-    // image.at<Vec3f>(0,0) = colorA;
-
-    // std::cout << "image.at<Vec3f>(0,0):  (" << (int)image.at<Vec3f>(0,0)[RED] << ", " << (int)image.at<Vec3f>(0,0)[GREEN] << ", " << (int)image.at<Vec3f>(0,0)[BLUE] << ")\n";
-
-    // std::cout << "RGB to YIQ...\n";
-    // colorA = from_rgb_to_yiq(colorA);
-
-
-    // image.at<Vec3f>(0,0) = colorA;
-
-
-    // std::cout << "image.at<Vec3f>(0,0):  (" << (int)image.at<Vec3f>(0,0)[RED] << ", " << (int)image.at<Vec3f>(0,0)[GREEN] << ", " << (int)image.at<Vec3f>(0,0)[BLUE] << ")\n";
-
-    // std::cout << "YIQ to RGB...\n";
-    // colorA = from_yiq_to_rgb(colorA);
-
-    // image.at<Vec3f>(0,0) = colorA;
-
-    // std::cout << "image.at<Vec3f>(0,0):  (" << (int)image.at<Vec3f>(0,0)[RED] << ", " << (int)image.at<Vec3f>(0,0)[GREEN] << ", " << (int)image.at<Vec3f>(0,0)[BLUE] << ")\n";
-
     image = from_rgb_to_yiq(image);
     image = from_yiq_to_rgb(image);
 
-    
+
 
     namedWindow("Display Image", WINDOW_AUTOSIZE);
     imshow("Display Image", image);
-    imwrite("finlandia-invertida.jpg", image);
+
+    Mat imagem255;
+
+    image.convertTo(imagem255, CV_8UC3, 255);
+
+    imwrite("finlandia-yiq.jpeg", imagem255);
     waitKey(0);
     
     return 0;
