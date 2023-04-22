@@ -48,6 +48,24 @@ Mat get_negative(Mat image)
     return image;
 }
 
+Mat3f get_negative_y(Mat3f image)
+{
+    Vec3f color;
+    for(int i = 0; i < image.rows; i++)
+    {
+        for(int j = 0; j < image.cols; j++)
+        {
+            color = image.at<Vec3f>(i,j);
+
+            color[Y] = 1.0f - color[Y];
+
+            image.at<Vec3f>(i,j) = color;
+        }
+    }
+
+    return image;
+}
+
 Mat get_single_channel(Mat image, gColor color_id)
 {
     Vec3f color;
@@ -173,8 +191,11 @@ int main(int argc, char ** argv)
     }
 
     image = from_rgb_to_yiq(image);
-    image = from_yiq_to_rgb(image);
 
+    image = get_negative_y(image);
+
+    image = from_yiq_to_rgb(image);
+ 
 
 
     namedWindow("Display Image", WINDOW_AUTOSIZE);
