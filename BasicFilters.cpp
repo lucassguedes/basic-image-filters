@@ -1,5 +1,6 @@
 #include <opencv2/opencv.hpp>
 #include<opencv2/highgui/highgui.hpp>
+#include <fstream>
 #include <stdio.h>
 
 using namespace cv;
@@ -121,13 +122,9 @@ void treat_rgb_color(Vec3f &color)
     {
         if(color[i] < 0)
         {
-            // std::cout << "color[" << i << "]=" << (int)color[i] << std::endl;
-            // getchar();
             color[i] = 0;
         }else if(color[i] > 255)
         {
-            // std::cout << "color[" << i << "]=" << (int)color[i] << std::endl;
-            // getchar();
             color[i] = 255;
         }
     }
@@ -173,12 +170,30 @@ Mat from_rgb_to_yiq(Mat image)
 }
 
 
+void show_mask(std::vector<std::vector<double> > mask)
+{
+    int rows = mask.size();
+    int cols = mask[0].size();
+
+    for(int i = 0; i < rows; i++)
+    {
+        for(int j = 0; j < cols; j++)
+        {
+            std::cout << mask[i][j] << " ";
+        }
+        std::cout << std::endl;
+    }
+}
+
+
 int main(int argc, char ** argv)
 {
 
-    if(argc != 2)
+    std::ifstream filter;
+
+    if(argc < 2)
     {
-        std::cout << "Modo de utilização: BasicFilters.out <Image_Path>\n";
+        std::cout << "Modo de utilização: BasicFilters.out <Image_Path> <Filter_Path(optional)>\n";
         return -1;
     }
     
@@ -189,6 +204,34 @@ int main(int argc, char ** argv)
         std::cout << "No image data\n";
         return -1;
     }
+
+
+    if(argc == 3)
+    {
+        filter.open(argv[2]);
+    }
+
+
+    int m, n; /*mask dimension*/
+    std::vector<std::vector<double> > mask;
+
+    filter >> m >> n;
+
+    mask = std::vector<std::vector<double> > (m, std::vector<double> (n, 0));
+
+    for(int i = 0; i < m; i++)
+    {
+        for(int j = 0; j < n; j++)
+        {
+            filter >> mask[i][j];
+        }
+    }
+
+    std::cout << "Mask:\n";
+
+    show_mask(mask);
+
+
 
     image = from_rgb_to_yiq(image);
 
