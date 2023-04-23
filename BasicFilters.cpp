@@ -185,6 +185,55 @@ void show_mask(std::vector<std::vector<double> > mask)
     }
 }
 
+Mat3f apply_mask(Mat3f image, std::vector<std::vector<double> > mask, int pivotX, int pivotY)
+{
+
+    int m = mask.size();
+    int n = mask[0].size();
+
+
+    Mat3f result_image = image;
+
+    Vec3f pixelValue;
+
+    for(int pixelY = 0; pixelY < image.rows; pixelY++)
+    {
+        for(int pixelX = 0; pixelX < image.cols; pixelX++)
+        {
+            /*Applying mask*/
+            pixelValue[RED] = 0;
+            pixelValue[GREEN] = 0;
+            pixelValue[BLUE] = 0;
+            // std::cout << "PixelX = " << pixelX << ", PixelY = " << pixelY << std::endl; 
+            // std::cout << "Iniciando i em " << pixelX - pivotX << std::
+            for(int i = pixelY-pivotY, mask_row=0; i <= pixelY + (m-pivotY-1); i++, mask_row++)
+            {
+                if(i < 0 || i > (image.rows - 1))
+                {
+                    // std::cout << "i = " << i << ", continuando...\n";
+                    continue;
+                }
+                for(int j = pixelX - pivotX, mask_col=0; j <= pixelX + (n-pivotX-1); j++, mask_col++)
+                {
+                    // std::cout << "i = " << i << ", j = " << j << " mask_row = " << mask_row << ", mask_col = " << mask_col << std::endl;
+                    if(j < 0 || j > (image.cols - 1))
+                    {
+                        // std::cout << "j = " << j << ", continuando...\n";
+                        continue;
+                    }
+                    pixelValue += mask[mask_row][mask_col]*image.at<Vec3f>(i,j);
+
+                }
+            }
+            // getchar();
+            result_image.at<Vec3f>(pixelY, pixelX) = pixelValue;
+            
+        }
+    }
+
+    return result_image;
+}
+
 
 int main(int argc, char ** argv)
 {
@@ -213,9 +262,11 @@ int main(int argc, char ** argv)
 
 
     int m, n; /*mask dimension*/
+    int pivotX, pivotY;
     std::vector<std::vector<double> > mask;
 
     filter >> m >> n;
+    filter >> pivotX >> pivotY;
 
     mask = std::vector<std::vector<double> > (m, std::vector<double> (n, 0));
 
@@ -233,11 +284,15 @@ int main(int argc, char ** argv)
 
 
 
-    image = from_rgb_to_yiq(image);
+    // image = from_rgb_to_yiq(image);
 
-    image = get_negative_y(image);
+    // image = get_negative_y(image);
 
-    image = from_yiq_to_rgb(image);
+    // image = from_yiq_to_rgb(image);
+
+
+
+    image = apply_mask(image, mask, pivotX, pivotY);
  
 
 
