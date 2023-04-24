@@ -232,16 +232,6 @@ Mat3f apply_mask(Mat3f image, std::vector<std::vector<double> > mask, int pivotX
 
                 }
             }
-            // getchar();
-
-            // pixelValue = absolute(pixelValue);
-            
-            // treat_rgb_color(pixelValue);
-
-            
-
-            // std::cout << "PixelValue: (" << pixelValue[RED] << ", " << pixelValue[GREEN] << ", " << pixelValue[BLUE] << std::endl;
-            // getchar();
 
             result_image.at<Vec3f>(pixelY, pixelX) = pixelValue;
             
@@ -383,6 +373,8 @@ Mat3f apply_sobel_filter(Mat3f image, std::vector<std::vector<double> >horizonta
         for(int j = 0; j < image.cols; j++)
         {
             result.at<Vec3f>(i,j) = absolute(imhorizontal.at<Vec3f>(i,j)) + absolute(imvertical.at<Vec3f>(i,j));
+
+            treat_rgb_color(result.at<Vec3f>(i,j));
         }
     }
     return result;
@@ -477,15 +469,12 @@ int main(int argc, char ** argv)
 
     std::cout << "A: " << A[0] << ", " << A[1] << ", " << A[2] << std::endl;
 
+    image = get_gray_scale(image);
 
-    // cvtColor(colorImage, image, COLOR_BGR2GRAY);
+    image = apply_mask(image, masks[0], pivotX[0], pivotY[0]);
 
 
-    // image = get_gray_scale(image);
-
-    image = apply_sobel_filter(image, masks[0], masks[1]);
-
-    // apply_mask(image, masks[1], 1, 1);
+    // image = apply_sobel_filter(image, masks[0], masks[1]);
 
 
  
