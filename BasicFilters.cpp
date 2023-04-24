@@ -9,6 +9,28 @@ enum gColor {BLUE, GREEN, RED};/*Blue = 0, GREEN = 1, RED = 2*/
 
 enum YIQScale {Q, I, Y}; /*Y = 0, I = 1, Q = 2*/
 
+Vec3f absolute(Vec3f v)
+{
+    v = Vec3f(abs(v[0]), abs(v[1]), abs(v[2]));
+
+    return v;
+}
+
+void treat_rgb_color(Vec3f &color)
+{
+    const int n_channels = 3;
+    for(int i = 0; i < n_channels; i++)
+    {
+        if(color[i] < 0)
+        {
+            color[i] = 0;
+        }else if(color[i] > 255)
+        {
+            color[i] = 255;
+        }
+    }
+}
+
 Mat3f get_negative(Mat3f image)
 {
     Vec3f color;
@@ -115,21 +137,6 @@ Vec3f from_yiq_to_rgb(Vec3f colorYIQ)
     
 }
 
-void treat_rgb_color(Vec3f &color)
-{
-    const int n_channels = 3;
-    for(int i = 0; i < n_channels; i++)
-    {
-        if(color[i] < 0)
-        {
-            color[i] = 0;
-        }else if(color[i] > 255)
-        {
-            color[i] = 255;
-        }
-    }
-}
-
 Mat from_yiq_to_rgb(Mat image)
 {
     Vec3f colorYIQ, colorRGB;
@@ -192,7 +199,7 @@ Mat3f apply_mask(Mat3f image, std::vector<std::vector<double> > mask, int pivotX
     int n = mask[0].size();
 
 
-    Mat3f result_image = image;
+    Mat3f result_image(image.rows, image.cols);
 
     Vec3f pixelValue;
 
@@ -226,6 +233,16 @@ Mat3f apply_mask(Mat3f image, std::vector<std::vector<double> > mask, int pivotX
                 }
             }
             // getchar();
+
+            // pixelValue = absolute(pixelValue);
+            
+            // treat_rgb_color(pixelValue);
+
+            
+
+            // std::cout << "PixelValue: (" << pixelValue[RED] << ", " << pixelValue[GREEN] << ", " << pixelValue[BLUE] << std::endl;
+            // getchar();
+
             result_image.at<Vec3f>(pixelY, pixelX) = pixelValue;
             
         }
@@ -233,6 +250,145 @@ Mat3f apply_mask(Mat3f image, std::vector<std::vector<double> > mask, int pivotX
 
     return result_image;
 }
+
+
+Mat3f apply_border_detection_filter(Mat3f image)
+{
+    Vec3f pixelValue;
+    for(int i = 0; i < image.rows; i++)
+    {
+        for(int j = 0; j < image.cols; j++)
+        {
+            pixelValue = Vec3f(0,0,0);
+            if((i + 1) < image.rows)
+                pixelValue += absolute(image.at<Vec3f>(i+1,j) - image.at<Vec3f>(i,j));
+ 
+            if(j+1 < image.cols)
+                pixelValue += absolute(image.at<Vec3f>(i,j+1) - image.at<Vec3f>(i,j));
+
+            image.at<Vec3f>(i, j) = pixelValue;
+        }
+    }
+
+    return image;
+}
+
+Mat3f apply_sobel_gradient(Mat3f image)
+{
+    Vec3f pixelValue[2];
+
+    Mat3f result_image = image;
+    for(int i = 0; i < image.rows; i++)
+    {
+        for(int j = 0; j < image.cols; j++)
+        {
+            pixelValue[0] = pixelValue[1] = Vec3f(0,0,0);
+
+            if((i+1) < image.rows)
+            {
+                for(int k = j - 1; k <= j+1; k++)
+                {
+                    if(k >= 0 && k  < image.cols)
+                    {
+                        if(k == j)
+                            pixelValue[0] += 2*image.at<Vec3f>(i+1, k);
+                        else
+                            pixelValue[0] += image.at<Vec3f>(i+1, k);
+
+                    }
+                }
+            }
+
+            if((i-1) >= 0)
+            {
+                for(int k = j - 1; k <= j+1; k++)
+                {
+                    if(k >= 0 && k  < image.cols)
+                    {
+                        if(k == j)
+                            pixelValue[0] -= 2*image.at<Vec3f>(i-1, k);
+                        else
+                            pixelValue[0] -= image.at<Vec3f>(i-1, k);
+
+                    }
+                }
+            }
+
+            pixelValue[0] = absolute(pixelValue[0]);
+
+            if((j+1) < image.cols)
+            {
+                for(int k = i - 1; k <= i+1; k++)
+                {
+                    if(k >= 0 && k  < image.rows)
+                    {
+                        
+                        pixelValue[1] += image.at<Vec3f>(k, j+1);
+
+                    }
+                }
+            }
+
+
+            if((j-1) >= 0)
+            {
+                for(int k = i - 1; k <= i+1; k++)
+                {
+                    if(k >= 0 && k  < image.rows)
+                    {
+                        pixelValue[1] -= image.at<Vec3f>(k, j-1);
+
+                    }
+                }
+            }
+
+            pixelValue[1] = absolute(pixelValue[1]);
+
+            result_image.at<Vec3f>(i, j) = (pixelValue[0] + pixelValue[1]);
+        }
+    }
+
+    return result_image;
+}
+
+
+Mat3f get_gray_scale(Mat3f image)
+{
+    Vec3f value;
+    for(int i = 0; i < image.rows; i++)
+    {
+        for(int j = 0; j < image.cols; j++)
+        {
+            value[RED] = value[GREEN] = value[BLUE] = 0.299* image.at<Vec3f>(i,j)[RED] + 0.587* image.at<Vec3f>(i,j)[GREEN] + 0.114* image.at<Vec3f>(i,j)[BLUE];
+
+            image.at<Vec3f>(i,j) = value;
+        }
+    }
+
+    return image;
+
+}
+
+
+
+Mat3f apply_sobel_filter(Mat3f image, std::vector<std::vector<double> >horizontal, std::vector<std::vector<double> >vertical)
+{
+    Mat3f imhorizontal, imvertical, result(image.rows, image.cols);
+
+    imhorizontal = apply_mask(image, horizontal, 1, 1);
+    imvertical = apply_mask(image, vertical, 1, 1);
+
+    for(int i = 0; i < image.rows; i++)
+    {
+        for(int j = 0; j < image.cols; j++)
+        {
+            result.at<Vec3f>(i,j) = absolute(imhorizontal.at<Vec3f>(i,j)) + absolute(imvertical.at<Vec3f>(i,j));
+        }
+    }
+    return result;
+}
+
+
 
 
 int main(int argc, char ** argv)
@@ -261,26 +417,43 @@ int main(int argc, char ** argv)
     }
 
 
-    int m, n; /*mask dimension*/
-    int pivotX, pivotY;
-    std::vector<std::vector<double> > mask;
+    int n_masks;
+    std::vector<int>m,n; /*mask dimension*/
+    std::vector<int> pivotX, pivotY;
+    std::vector<std::vector<std::vector<double> >> masks;
 
-    filter >> m >> n;
-    filter >> pivotX >> pivotY;
+    filter >> n_masks;
 
-    mask = std::vector<std::vector<double> > (m, std::vector<double> (n, 0));
+    m = n = pivotX = pivotY = std::vector<int>(n_masks, 0);
 
-    for(int i = 0; i < m; i++)
+    std::cout << "n_masks: " << n_masks << std::endl;
+    for(int i = 0; i < n_masks; i++)
     {
-        for(int j = 0; j < n; j++)
+        filter >> m[i] >> n[i];
+        filter >> pivotX[i] >> pivotY[i];
+
+
+        masks.push_back(std::vector<std::vector<double> > (m[i], std::vector<double> (n[i], 0)));
+
+        for(int j = 0; j < m[i]; j++)
         {
-            filter >> mask[i][j];
+            for(int k = 0; k < n[i]; k++)
+            {
+                filter >> masks[i][j][k];
+            }
         }
+
+        std::cout << "Mask " << i + 1 << ": \n";
+
+        show_mask(masks[i]);
     }
 
-    std::cout << "Mask:\n";
+  
 
-    show_mask(mask);
+    
+
+
+
 
 
 
@@ -292,7 +465,29 @@ int main(int argc, char ** argv)
 
 
 
-    image = apply_mask(image, mask, pivotX, pivotY);
+    // image = apply_mask(image, mask, pivotX, pivotY);
+
+    // image = apply_border_detection_filter(image);
+
+    Mat3f colorImage = image;
+
+    Vec3f A = Vec3f(1,2,3);
+
+    A = 2*A;
+
+    std::cout << "A: " << A[0] << ", " << A[1] << ", " << A[2] << std::endl;
+
+
+    // cvtColor(colorImage, image, COLOR_BGR2GRAY);
+
+
+    // image = get_gray_scale(image);
+
+    image = apply_sobel_filter(image, masks[0], masks[1]);
+
+    // apply_mask(image, masks[1], 1, 1);
+
+
  
 
 
@@ -303,7 +498,7 @@ int main(int argc, char ** argv)
 
     image.convertTo(imagem255, CV_8UC3, 255);
 
-    imwrite("finlandia-yiq.jpeg", imagem255);
+    imwrite("media7x7.jpeg", imagem255);
     waitKey(0);
     
     return 0;
