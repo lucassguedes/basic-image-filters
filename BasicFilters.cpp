@@ -361,12 +361,19 @@ Mat3f get_gray_scale(Mat3f image)
 
 
 
-Mat3f apply_sobel_filter(Mat3f image, std::vector<std::vector<double> >horizontal, std::vector<std::vector<double> >vertical)
+Mat3f apply_sobel_filter(Mat3f image, std::vector<std::vector<double> >horizontal, std::vector<std::vector<double> >vertical, bool histogram_exp=false)
 {
     Mat3f imhorizontal, imvertical, result(image.rows, image.cols);
 
     imhorizontal = apply_mask(image, horizontal, 1, 1);
     imvertical = apply_mask(image, vertical, 1, 1);
+
+    double redmin, redmax;
+    double greenmin, greenmax;
+    double bluemin, bluemax;
+
+    redmin = greenmin = bluemin = std::numeric_limits<double>::max();
+    redmax = greenmax = bluemax = -std::numeric_limits<double>::max();
 
     for(int i = 0; i < image.rows; i++)
     {
@@ -375,8 +382,43 @@ Mat3f apply_sobel_filter(Mat3f image, std::vector<std::vector<double> >horizonta
             result.at<Vec3f>(i,j) = absolute(imhorizontal.at<Vec3f>(i,j)) + absolute(imvertical.at<Vec3f>(i,j));
 
             treat_rgb_color(result.at<Vec3f>(i,j));
+
+            if(result.at<Vec3f>(i,j)[RED] < redmin)
+                redmin = result.at<Vec3f>(i,j)[RED];
+
+            if(result.at<Vec3f>(i,j)[GREEN] < greenmin)
+                greenmin = result.at<Vec3f>(i,j)[GREEN];
+
+            if(result.at<Vec3f>(i,j)[BLUE] < bluemin)
+                bluemin = result.at<Vec3f>(i,j)[BLUE];
+
+
+            if(result.at<Vec3f>(i,j)[RED] > redmax)
+                redmax = result.at<Vec3f>(i,j)[RED];
+
+            if(result.at<Vec3f>(i,j)[GREEN] > greenmax)
+                greenmax = result.at<Vec3f>(i,j)[GREEN];
+
+            if(result.at<Vec3f>(i,j)[BLUE] > bluemax)
+                bluemax = result.at<Vec3f>(i,j)[BLUE];
+
         }
     }
+
+
+    if(histogram_exp)
+    {
+        for(int i = 0; i < image.rows; i++)
+        {
+            for(int j = 0; j < image.cols; j++)
+            {
+                result.at<Vec3f>(i,j)[RED] = ((result.at<Vec3f>(i,j)[RED] - redmin)/(redmax - redmin))*1.0f;
+                result.at<Vec3f>(i,j)[GREEN] = ((result.at<Vec3f>(i,j)[GREEN] - greenmin)/(greenmax - greenmin))*1.0f;
+                result.at<Vec3f>(i,j)[BLUE] = ((result.at<Vec3f>(i,j)[BLUE] - bluemin)/(bluemax - bluemin))*1.0f;
+            }
+        }
+    }
+
     return result;
 }
 
@@ -533,16 +575,9 @@ int main(int argc, char ** argv)
 
     std::cout << "A: " << A[0] << ", " << A[1] << ", " << A[2] << std::endl;
 
-    // image = get_gray_scale(image);
+    image = get_gray_scale(image);
 
-    // image = get_negative(image);
-
-    image = get_median(image, 7, 7);
-
-    // image = apply_mask(image, masks[0], pivotX[0], pivotY[0]);
-
-
-    // image = apply_sobel_filter(image, masks[0], masks[1]);
+    image = apply_sobel_filter(image, masks[0], masks[1],true);
 
 
  
