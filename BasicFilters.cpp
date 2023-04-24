@@ -7,7 +7,7 @@ using namespace cv;
 
 enum gColor {BLUE, GREEN, RED};/*Blue = 0, GREEN = 1, RED = 2*/
 
-enum YIQScale {Q, I, Y}; /*Y = 0, I = 1, Q = 2*/
+enum YIQScale {Q, I, Y}; /*Q = 0, I = 1, Y = 2*/
 
 Vec3f absolute(Vec3f v)
 {
@@ -381,6 +381,70 @@ Mat3f apply_sobel_filter(Mat3f image, std::vector<std::vector<double> >horizonta
 }
 
 
+Mat3f get_median(Mat3f image, int m, int n)
+{
+    Mat3f result_image(image.rows, image.cols);
+
+    Vec3f pixelValue;
+
+    int pivotX=0,pivotY=0;
+    std::vector<double> reds, greens, blues;
+
+    for(int pixelY = 0; pixelY < image.rows; pixelY++)
+    {
+        for(int pixelX = 0; pixelX < image.cols; pixelX++)
+        {
+            /*Applying mask*/
+            pixelValue = Vec3f(0,0,0);
+
+            reds = greens = blues = {};
+            // std::cout << "PixelX = " << pixelX << ", PixelY = " << pixelY << std::endl; 
+            // std::cout << "Iniciando i em " << pixelX - pivotX << std::
+            for(int i = pixelY-pivotY, mask_row=0; i <= pixelY + (m-pivotY-1); i++, mask_row++)
+            {
+                if(i < 0 || i > (image.rows - 1))
+                {
+                    // std::cout << "i = " << i << ", continuando...\n";
+                    reds.push_back(0);
+                    greens.push_back(0);
+                    blues.push_back(0);
+                    continue;
+                }
+                for(int j = pixelX - pivotX, mask_col=0; j <= pixelX + (n-pivotX-1); j++, mask_col++)
+                {
+                    // std::cout << "i = " << i << ", j = " << j << " mask_row = " << mask_row << ", mask_col = " << mask_col << std::endl;
+                    if(j < 0 || j > (image.cols - 1))
+                    {
+                        // std::cout << "j = " << j << ", continuando...\n";
+                        reds.push_back(0);
+                        greens.push_back(0);
+                        blues.push_back(0);
+                        continue;
+                    }
+                    reds.push_back(image.at<Vec3f>(i,j)[RED]);
+                    greens.push_back(image.at<Vec3f>(i,j)[GREEN]);
+                    blues.push_back(image.at<Vec3f>(i,j)[BLUE]);
+
+                }
+            }
+
+            std::sort(reds.begin(), reds.end());
+            std::sort(greens.begin(), greens.end());
+            std::sort(blues.begin(), blues.end());
+
+            pixelValue[RED] = reds[(reds.size()-1)/2];
+            pixelValue[GREEN] = greens[(greens.size()-1)/2];
+            pixelValue[BLUE] = blues[(blues.size()-1)/2];
+
+            result_image.at<Vec3f>(pixelY, pixelX) = pixelValue;
+            
+        }
+    }
+
+    return result_image;
+}
+
+
 
 
 int main(int argc, char ** argv)
@@ -469,9 +533,13 @@ int main(int argc, char ** argv)
 
     std::cout << "A: " << A[0] << ", " << A[1] << ", " << A[2] << std::endl;
 
-    image = get_gray_scale(image);
+    // image = get_gray_scale(image);
 
-    image = apply_mask(image, masks[0], pivotX[0], pivotY[0]);
+    // image = get_negative(image);
+
+    image = get_median(image, 7, 7);
+
+    // image = apply_mask(image, masks[0], pivotX[0], pivotY[0]);
 
 
     // image = apply_sobel_filter(image, masks[0], masks[1]);
