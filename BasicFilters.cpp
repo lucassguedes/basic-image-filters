@@ -24,9 +24,9 @@ void treat_rgb_color(Vec3f &color)
         if(color[i] < 0)
         {
             color[i] = 0;
-        }else if(color[i] > 255)
+        }else if(color[i] > 1.0f)
         {
-            color[i] = 255;
+            color[i] = 1.0f;
         }
     }
 }
@@ -137,7 +137,7 @@ Vec3f from_yiq_to_rgb(Vec3f colorYIQ)
     
 }
 
-Mat from_yiq_to_rgb(Mat image)
+Mat3f from_yiq_to_rgb(Mat3f image)
 {
     Vec3f colorYIQ, colorRGB;
     for(int i = 0; i < image.rows; i++)
@@ -158,7 +158,7 @@ Mat from_yiq_to_rgb(Mat image)
     return image;
 }
 
-Mat from_rgb_to_yiq(Mat image)
+Mat3f from_rgb_to_yiq(Mat3f image)
 {
     Vec3f colorYIQ, colorRGB;
     for(int i = 0; i < image.rows; i++)
@@ -192,15 +192,13 @@ void show_mask(std::vector<std::vector<double> > mask)
     }
 }
 
-Mat3f apply_mask(Mat3f image, std::vector<std::vector<double> > mask, int pivotX, int pivotY)
+Mat3f apply_mask(Mat3f image, std::vector<std::vector<double> > mask, int pivotX, int pivotY, double offset=0.0, bool abs=false)
 {
 
     int m = mask.size();
     int n = mask[0].size();
 
-
     Mat3f result_image(image.rows, image.cols);
-
     Vec3f pixelValue;
 
     for(int pixelY = 0; pixelY < image.rows; pixelY++)
@@ -208,30 +206,24 @@ Mat3f apply_mask(Mat3f image, std::vector<std::vector<double> > mask, int pivotX
         for(int pixelX = 0; pixelX < image.cols; pixelX++)
         {
             /*Applying mask*/
-            pixelValue[RED] = 0;
-            pixelValue[GREEN] = 0;
-            pixelValue[BLUE] = 0;
-            // std::cout << "PixelX = " << pixelX << ", PixelY = " << pixelY << std::endl; 
-            // std::cout << "Iniciando i em " << pixelX - pivotX << std::
+            pixelValue = Vec3f(0,0,0);
             for(int i = pixelY-pivotY, mask_row=0; i <= pixelY + (m-pivotY-1); i++, mask_row++)
             {
                 if(i < 0 || i > (image.rows - 1))
-                {
-                    // std::cout << "i = " << i << ", continuando...\n";
                     continue;
-                }
                 for(int j = pixelX - pivotX, mask_col=0; j <= pixelX + (n-pivotX-1); j++, mask_col++)
                 {
-                    // std::cout << "i = " << i << ", j = " << j << " mask_row = " << mask_row << ", mask_col = " << mask_col << std::endl;
                     if(j < 0 || j > (image.cols - 1))
-                    {
-                        // std::cout << "j = " << j << ", continuando...\n";
                         continue;
-                    }
                     pixelValue += mask[mask_row][mask_col]*image.at<Vec3f>(i,j);
 
                 }
             }
+
+            pixelValue += Vec3f(offset, offset, offset);
+
+            if(abs)
+                pixelValue = absolute(pixelValue);
 
             result_image.at<Vec3f>(pixelY, pixelX) = pixelValue;
             
@@ -440,13 +432,10 @@ Mat3f get_median(Mat3f image, int m, int n)
             pixelValue = Vec3f(0,0,0);
 
             reds = greens = blues = {};
-            // std::cout << "PixelX = " << pixelX << ", PixelY = " << pixelY << std::endl; 
-            // std::cout << "Iniciando i em " << pixelX - pivotX << std::
             for(int i = pixelY-pivotY, mask_row=0; i <= pixelY + (m-pivotY-1); i++, mask_row++)
             {
                 if(i < 0 || i > (image.rows - 1))
                 {
-                    // std::cout << "i = " << i << ", continuando...\n";
                     reds.push_back(0);
                     greens.push_back(0);
                     blues.push_back(0);
@@ -454,10 +443,8 @@ Mat3f get_median(Mat3f image, int m, int n)
                 }
                 for(int j = pixelX - pivotX, mask_col=0; j <= pixelX + (n-pivotX-1); j++, mask_col++)
                 {
-                    // std::cout << "i = " << i << ", j = " << j << " mask_row = " << mask_row << ", mask_col = " << mask_col << std::endl;
                     if(j < 0 || j > (image.cols - 1))
                     {
-                        // std::cout << "j = " << j << ", continuando...\n";
                         reds.push_back(0);
                         greens.push_back(0);
                         blues.push_back(0);
@@ -492,8 +479,6 @@ Mat3f get_median(Mat3f image, int m, int n)
 int main(int argc, char ** argv)
 {
 
-    std::ifstream filter;
-
     if(argc < 2)
     {
         std::cout << "Modo de utilização: BasicFilters.out <Image_Path> <Filter_Path(optional)>\n";
@@ -509,79 +494,50 @@ int main(int argc, char ** argv)
     }
 
 
-    if(argc == 3)
-    {
-        filter.open(argv[2]);
-    }
+    
 
-
+    std::ifstream filter;
     int n_masks;
     std::vector<int>m,n; /*mask dimension*/
     std::vector<int> pivotX, pivotY;
     std::vector<std::vector<std::vector<double> >> masks;
 
-    filter >> n_masks;
-
-    m = n = pivotX = pivotY = std::vector<int>(n_masks, 0);
-
-    std::cout << "n_masks: " << n_masks << std::endl;
-    for(int i = 0; i < n_masks; i++)
+    if(argc == 3)
     {
-        filter >> m[i] >> n[i];
-        filter >> pivotX[i] >> pivotY[i];
+        filter.open(argv[2]);
 
+        filter >> n_masks;
 
-        masks.push_back(std::vector<std::vector<double> > (m[i], std::vector<double> (n[i], 0)));
+        m = n = pivotX = pivotY = std::vector<int>(n_masks, 0);
 
-        for(int j = 0; j < m[i]; j++)
+        for(int i = 0; i < n_masks; i++)
         {
-            for(int k = 0; k < n[i]; k++)
+            filter >> m[i] >> n[i];
+            filter >> pivotX[i] >> pivotY[i];
+
+
+            masks.push_back(std::vector<std::vector<double> > (m[i], std::vector<double> (n[i], 0)));
+
+            for(int j = 0; j < m[i]; j++)
             {
-                filter >> masks[i][j][k];
+                for(int k = 0; k < n[i]; k++)
+                {
+                    filter >> masks[i][j][k];
+                }
             }
         }
-
-        std::cout << "Mask " << i + 1 << ": \n";
-
-        show_mask(masks[i]);
     }
 
-  
-
-    
+    clock_t begin_time = clock();
 
 
+    image = get_negative(image);
 
 
+    clock_t end_time = clock();
 
 
-    // image = from_rgb_to_yiq(image);
-
-    // image = get_negative_y(image);
-
-    // image = from_yiq_to_rgb(image);
-
-
-
-    // image = apply_mask(image, mask, pivotX, pivotY);
-
-    // image = apply_border_detection_filter(image);
-
-    Mat3f colorImage = image;
-
-    Vec3f A = Vec3f(1,2,3);
-
-    A = 2*A;
-
-    std::cout << "A: " << A[0] << ", " << A[1] << ", " << A[2] << std::endl;
-
-    image = get_gray_scale(image);
-
-    image = apply_sobel_filter(image, masks[0], masks[1],true);
-
-
- 
-
+    std::cout << "TIME: " << (double)(end_time - begin_time) / CLOCKS_PER_SEC << std::endl;
 
     namedWindow("Display Image", WINDOW_AUTOSIZE);
     imshow("Display Image", image);
@@ -590,7 +546,7 @@ int main(int argc, char ** argv)
 
     image.convertTo(imagem255, CV_8UC3, 255);
 
-    imwrite("media7x7.jpeg", imagem255);
+    imwrite("dancing-box11x1-and-1x11.jpeg", imagem255);
     waitKey(0);
     
     return 0;
