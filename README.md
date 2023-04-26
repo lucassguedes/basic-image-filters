@@ -27,9 +27,9 @@ Este repositório contém o código-fonte produzido no primeiro trabalho da disc
 
 ![alt text](./dancing-sobel.jpeg)
 
-## Escala de Cinza + Sobel com Expansão de Histograma
+<!-- ## Escala de Cinza + Sobel com Expansão de Histograma
 
-![alt text](./dancing-sobel-hist.jpeg)
+![alt text](./dancing-sobel-hist.jpeg) -->
 
 ## Escala de Cinza + Emboss
 

@@ -531,7 +531,7 @@ int main(int argc, char ** argv)
     clock_t begin_time = clock();
 
 
-    image = get_median(image, 7,7);
+    image = get_median(image,7,7);
 
 
     clock_t end_time = clock();
