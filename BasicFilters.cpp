@@ -531,7 +531,7 @@ int main(int argc, char ** argv)
     clock_t begin_time = clock();
 
 
-    image = get_negative(image);
+    image = get_median(image, 7,7);
 
 
     clock_t end_time = clock();
@@ -546,7 +546,7 @@ int main(int argc, char ** argv)
 
     image.convertTo(imagem255, CV_8UC3, 255);
 
-    imwrite("dancing-box11x1-and-1x11.jpeg", imagem255);
+    imwrite("dancing-median.jpeg", imagem255);
     waitKey(0);
     
     return 0;
